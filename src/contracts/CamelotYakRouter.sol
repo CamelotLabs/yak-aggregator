@@ -218,7 +218,13 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         require(_maxSteps > 0 && _maxSteps < 5, "YakRouter: Invalid max-steps");
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
         uint256 gasPriceInExitTkn = _gasPrice > 0 ? getGasPriceInExitTkn(_gasPrice, _tokenOut) : 0;
-        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _trustedTokens, _maxSteps, queries, gasPriceInExitTkn);
+
+        // Concatenate default and additional trusted tokens
+        address[] memory _allTrustedTokens = new address[](TRUSTED_TOKENS.length + _trustedTokens.length);
+        for (uint i=0; i < TRUSTED_TOKENS.length; i++) { _allTrustedTokens[i] = TRUSTED_TOKENS[i]; }
+        for (uint i=0; i < _trustedTokens.length; i++) { _allTrustedTokens[TRUSTED_TOKENS.length + i] = _trustedTokens[i]; }
+
+        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _allTrustedTokens, _maxSteps, queries, gasPriceInExitTkn);
         if (queries.adapters.length == 0) {
             queries.amounts = "";
             queries.path = "";
@@ -249,7 +255,13 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     ) override public view returns (FormattedOffer memory) {
         require(_maxSteps > 0 && _maxSteps < 5, "YakRouter: Invalid max-steps");
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
-        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _trustedTokens, _maxSteps, queries, 0);
+
+        // Concatenate default and additional trusted tokens
+        address[] memory _allTrustedTokens = new address[](TRUSTED_TOKENS.length + _trustedTokens.length);
+        for (uint i=0; i < TRUSTED_TOKENS.length; i++) { _allTrustedTokens[i] = TRUSTED_TOKENS[i]; }
+        for (uint i=0; i < _trustedTokens.length; i++) { _allTrustedTokens[TRUSTED_TOKENS.length + i] = _trustedTokens[i]; }
+
+        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _allTrustedTokens, _maxSteps, queries, 0);
         // If no paths are found return empty struct
         if (queries.adapters.length == 0) {
             queries.amounts = "";
@@ -285,19 +297,13 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
 
         // Only check the rest if they would go beyond step limit (Need at least 2 more steps)
         if (_maxSteps > 1 && _queries.adapters.length / 32 <= _maxSteps - 2) {
-            address[] memory _allTrustedTokens = new address[](TRUSTED_TOKENS.length + _trustedTokens.length);
-
-            // Concatenate default and additional trusted tokens
-            for (uint i=0; i < TRUSTED_TOKENS.length; i++) { _allTrustedTokens[i] = TRUSTED_TOKENS[i]; }
-            for (uint i=0; i < _trustedTokens.length; i++) { _allTrustedTokens[TRUSTED_TOKENS.length + i] = _trustedTokens[i]; }
-
             // Check for paths that pass through trusted tokens
-            for (uint256 i = 0; i < _allTrustedTokens.length; i++) {
-                if (_tokenIn == _allTrustedTokens[i]) {
+            for (uint256 i = 0; i < _trustedTokens.length; i++) {
+                if (_tokenIn == _trustedTokens[i]) {
                     continue;
                 }
                 // Loop through all adapters to find the best one for swapping tokenIn for one of the trusted tokens
-                Query memory bestSwap = queryNoSplit(_amountIn, _tokenIn, _allTrustedTokens[i]);
+                Query memory bestSwap = queryNoSplit(_amountIn, _tokenIn, _trustedTokens[i]);
                 if (bestSwap.amountOut == 0) {
                     continue;
                 }
@@ -309,9 +315,9 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                 newOffer.addToTail(bestSwap.amountOut, bestSwap.adapter, bestSwap.tokenOut, gasEstimate);
                 newOffer = _findBestPath(
                     bestSwap.amountOut,
-                    _allTrustedTokens[i],
+                    _trustedTokens[i],
                     _tokenOut,
-                    _allTrustedTokens,
+                    _trustedTokens,
                     _maxSteps,
                     newOffer,
                     _tknOutPriceNwei
