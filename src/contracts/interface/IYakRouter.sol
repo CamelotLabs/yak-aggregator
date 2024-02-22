@@ -103,36 +103,36 @@ interface IYakRouter {
 
     function swapNoSplit(
         Trade calldata _trade,
-        address _to,
-        uint256 _fee
+        uint256 _fee,
+        address _to
     ) external;
 
-    function swapNoSplitFromAVAX(
+    function swapNoSplitFromETH(
         Trade calldata _trade,
-        address _to,
-        uint256 _fee
+        uint256 _fee,
+        address _to
     ) external payable;
 
-    function swapNoSplitToAVAX(
+    function swapNoSplitToETH(
         Trade calldata _trade,
-        address _to,
-        uint256 _fee
+        uint256 _fee,
+        address _to
     ) external; 
 
     function swapNoSplitWithPermit(
         Trade calldata _trade,
-        address _to,
         uint256 _fee,
+        address _to,
         uint256 _deadline,
         uint8 _v,
         bytes32 _r,
         bytes32 _s
     ) external;
 
-    function swapNoSplitToAVAXWithPermit(
+    function swapNoSplitToETHWithPermit(
         Trade calldata _trade,
-        address _to,
         uint256 _fee,
+        address _to,
         uint256 _deadline,
         uint8 _v,
         bytes32 _r,

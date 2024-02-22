@@ -30,13 +30,13 @@ import "./lib/Recoverable.sol";
 import "./lib/SafeERC20.sol";
 
 
-contract YakRouter is Maintainable, Recoverable, IYakRouter {
+contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     using SafeERC20 for IERC20;
     using OfferUtils for Offer;
 
     address public immutable WNATIVE;
     address public constant NATIVE = address(0);
-    string public constant NAME = "YakRouter";
+    string public constant NAME = "CamelotYakRouter";
     uint256 public constant FEE_DENOMINATOR = 1e4;
     uint256 public MIN_FEE = 0;
     address public FEE_CLAIMER;
@@ -110,9 +110,13 @@ contract YakRouter is Maintainable, Recoverable, IYakRouter {
         IWETH(WNATIVE).withdraw(_amount);
     }
 
+    function _unwrapTo(address _to, uint256 _amount) internal {
+        IWETH(WNATIVE).withdrawTo(_to, _amount);
+    }
+
     /**
      * @notice Return tokens to user
-     * @dev Pass address(0) for AVAX
+     * @dev Pass address(0) for ETH
      * @param _token address
      * @param _amount tokens to return
      * @param _to address where funds should be sent to
@@ -319,8 +323,8 @@ contract YakRouter is Maintainable, Recoverable, IYakRouter {
     function _swapNoSplit(
         Trade calldata _trade,
         address _from,
-        address _to,
-        uint256 _fee
+        uint256 _fee,
+        address _to
     ) internal returns (uint256) {
         uint256 amountIn = _trade.amountIn;
         if (_fee > 0 || MIN_FEE > 0) {
@@ -353,31 +357,30 @@ contract YakRouter is Maintainable, Recoverable, IYakRouter {
 
     function swapNoSplit(
         Trade calldata _trade,
-        address _to,
-        uint256 _fee
+        uint256 _fee,
+        address _to
     ) override public {
-        _swapNoSplit(_trade, msg.sender, _to, _fee);
+        _swapNoSplit(_trade, msg.sender, _fee, _to);
     }
 
-    function swapNoSplitFromAVAX(
+    function swapNoSplitFromETH(
         Trade calldata _trade,
-        address _to,
-        uint256 _fee
+        uint256 _fee,
+        address _to
     ) override external payable {
-        require(_trade.path[0] == WNATIVE, "YakRouter: Path needs to begin with WAVAX");
+        require(_trade.path[0] == WNATIVE, "YakRouter: Path needs to begin with WETH");
         _wrap(_trade.amountIn);
-        _swapNoSplit(_trade, address(this), _to, _fee);
+        _swapNoSplit(_trade, address(this), _fee, _to);
     }
 
-    function swapNoSplitToAVAX(
+    function swapNoSplitToETH(
         Trade calldata _trade,
-        address _to,
-        uint256 _fee
+        uint256 _fee,
+        address _to
     ) override public {
-        require(_trade.path[_trade.path.length - 1] == WNATIVE, "YakRouter: Path needs to end with WAVAX");
-        uint256 returnAmount = _swapNoSplit(_trade, msg.sender, address(this), _fee);
-        _unwrap(returnAmount);
-        _returnTokensTo(NATIVE, returnAmount, _to);
+        require(_trade.path[_trade.path.length - 1] == WNATIVE, "YakRouter: Path needs to end with WETH");
+        uint256 returnAmount = _swapNoSplit(_trade, msg.sender, _fee, address(this));
+        _unwrapTo(_to, returnAmount);
     }
 
     /**
@@ -385,30 +388,30 @@ contract YakRouter is Maintainable, Recoverable, IYakRouter {
      */
     function swapNoSplitWithPermit(
         Trade calldata _trade,
-        address _to,
         uint256 _fee,
+        address _to,
         uint256 _deadline,
         uint8 _v,
         bytes32 _r,
         bytes32 _s
     ) override external {
         IERC20(_trade.path[0]).permit(msg.sender, address(this), _trade.amountIn, _deadline, _v, _r, _s);
-        swapNoSplit(_trade, _to, _fee);
+        swapNoSplit(_trade, _fee, _to);
     }
 
     /**
-     * Swap token to AVAX without the need to approve the first token
+     * Swap token to WETH without the need to approve the first token
      */
-    function swapNoSplitToAVAXWithPermit(
+    function swapNoSplitToETHWithPermit(
         Trade calldata _trade,
-        address _to,
         uint256 _fee,
+        address _to,
         uint256 _deadline,
         uint8 _v,
         bytes32 _r,
         bytes32 _s
     ) override external {
         IERC20(_trade.path[0]).permit(msg.sender, address(this), _trade.amountIn, _deadline, _v, _r, _s);
-        swapNoSplitToAVAX(_trade, _to, _fee);
+        swapNoSplitToETH(_trade, _fee, _to);
     }
 }

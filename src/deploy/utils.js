@@ -41,7 +41,7 @@ module.exports.deployMinimalRouter = (networkName) => {
         console.log('YakRouter deployment arguments: ', deployArgs)
 
         const name = 'MinimalYakRouter'
-        const contractName = 'YakRouter'
+        const contractName = 'CamelotYakRouter'
         const optionalArgs = { gas: 4000000 }
         const deployFn = _deployContract(name, contractName, deployArgs, optionalArgs)
         await deployFn({ getNamedAccounts, deployments })
@@ -97,7 +97,7 @@ module.exports.deployRouter = (networkName) => {
         console.log('YakRouter deployment arguments: ', deployArgs)
 
         const name = 'YakRouter'
-        const contractName = 'YakRouter'
+        const contractName = 'CamelotYakRouter'
         const optionalArgs = { gas: 4000000 }
         const deployFn = _deployContract(name, contractName, deployArgs, optionalArgs)
         await deployFn({ getNamedAccounts, deployments })
