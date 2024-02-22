@@ -154,8 +154,10 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         uint8 _index
     ) override external view returns (uint256) {
         IAdapter _adapter = IAdapter(ADAPTERS[_index]);
-        uint256 amountOut = _adapter.query(_amountIn, _tokenIn, _tokenOut);
-        return amountOut;
+        try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 _amountOut) {
+            return _amountOut;
+        }
+        catch { return 0; }
     }
 
     /**
@@ -170,10 +172,12 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Query memory bestQuery;
         for (uint8 i; i < _options.length; i++) {
             address _adapter = ADAPTERS[_options[i]];
-            uint256 amountOut = IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut);
-            if (i == 0 || amountOut > bestQuery.amountOut) {
-                bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
+            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut) {
+                if (i == 0 || amountOut > bestQuery.amountOut) {
+                    bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
+                }
             }
+            catch { continue; }
         }
         return bestQuery;
     }
@@ -189,10 +193,12 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Query memory bestQuery;
         for (uint8 i; i < ADAPTERS.length; i++) {
             address _adapter = ADAPTERS[i];
-            uint256 amountOut = IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut);
-            if (i == 0 || amountOut > bestQuery.amountOut) {
-                bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
+            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut) {
+                if (i == 0 || amountOut > bestQuery.amountOut) {
+                    bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
+                }
             }
+            catch { continue; }
         }
         return bestQuery;
     }
