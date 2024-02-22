@@ -88,6 +88,7 @@ interface IYakRouter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
+        address[] memory _trustedTokens,
         uint256 _maxSteps,
         uint256 _gasPrice
     ) external view returns (FormattedOffer memory);
@@ -96,6 +97,7 @@ interface IYakRouter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
+        address[] memory _trustedTokens,
         uint256 _maxSteps
     ) external view returns (FormattedOffer memory);
 

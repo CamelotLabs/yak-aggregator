@@ -52,7 +52,10 @@ contract YakWrapRouter is Maintainable {
             FormattedOffer memory offer;
             uint256 wrappedAmountOut;
             if (wrapperTokenIn[i] != tokenIn) {
-                offer = router.findBestPathWithGas(amountIn, tokenIn, wrapperTokenIn[i], maxSteps, gasPrice);
+                address[] memory _trustedTokens;
+                offer = router.findBestPathWithGas(
+                    amountIn, tokenIn, wrapperTokenIn[i], _trustedTokens, maxSteps, gasPrice
+                );
                 wrappedAmountOut = IWrapper(wrapper).query(
                     offer.amounts[offer.amounts.length - 1],
                     wrapperTokenIn[i],
@@ -86,7 +89,10 @@ contract YakWrapRouter is Maintainable {
             uint256 amountOut = IWrapper(wrapper).query(amountIn, wrappedToken, wrapperTokenOut[i]);
             FormattedOffer memory offer;
             if (wrapperTokenOut[i] != tokenOut) {
-                offer = router.findBestPathWithGas(amountOut, wrapperTokenOut[i], tokenOut, maxSteps, gasPrice);
+                address[] memory _trustedTokens;
+                offer = router.findBestPathWithGas(
+                    amountOut, wrapperTokenOut[i], tokenOut, _trustedTokens, maxSteps, gasPrice
+                );
                 amountOut = offer.getAmountOut();
             } else {
                 Offer memory query = OfferUtils.newOffer(amountIn, wrappedToken);

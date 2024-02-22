@@ -46,12 +46,18 @@ module.exports = {
     spec: ['test/*.spec.js']
   },
   solidity: {
-      version: "0.8.4", 
+      version: "0.8.17",
       settings: {
         optimizer: {
           enabled: true,
-          runs: 999
-        }  
+          runs: 999,
+          details: {
+            yulDetails: {
+              optimizerSteps: "u"
+            }
+          },
+        },
+        viaIR: true,
       }
   },
   namedAccounts: {

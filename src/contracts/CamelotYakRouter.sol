@@ -16,7 +16,7 @@
 //
 
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.17;
 pragma experimental ABIEncoderV2;
 
 import "./interface/IYakRouter.sol";
@@ -205,13 +205,14 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
+        address[] memory _trustedTokens,
         uint256 _maxSteps,
         uint256 _gasPrice
     ) override external view returns (FormattedOffer memory) {
         require(_maxSteps > 0 && _maxSteps < 5, "YakRouter: Invalid max-steps");
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
         uint256 gasPriceInExitTkn = _gasPrice > 0 ? getGasPriceInExitTkn(_gasPrice, _tokenOut) : 0;
-        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _maxSteps, queries, gasPriceInExitTkn);
+        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _trustedTokens, _maxSteps, queries, gasPriceInExitTkn);
         if (queries.adapters.length == 0) {
             queries.amounts = "";
             queries.path = "";
@@ -222,7 +223,8 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     // Find the market price between gas-asset(native) and token-out and express gas price in token-out
     function getGasPriceInExitTkn(uint256 _gasPrice, address _tokenOut) internal view returns (uint256 price) {
         // Avoid low-liquidity price appreciation (https://github.com/yieldyak/yak-aggregator/issues/20)
-        FormattedOffer memory gasQuery = findBestPath(1e18, WNATIVE, _tokenOut, 2);
+        address[] memory _trustedTokens;
+        FormattedOffer memory gasQuery = findBestPath(1e18, WNATIVE, _tokenOut, _trustedTokens, 2);
         if (gasQuery.path.length != 0) {
             // Leave result in nWei to preserve precision for assets with low decimal places
             price = (gasQuery.amounts[gasQuery.amounts.length - 1] * _gasPrice) / 1e9;
@@ -236,11 +238,12 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
+        address[] memory _trustedTokens,
         uint256 _maxSteps
     ) override public view returns (FormattedOffer memory) {
         require(_maxSteps > 0 && _maxSteps < 5, "YakRouter: Invalid max-steps");
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
-        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _maxSteps, queries, 0);
+        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _trustedTokens, _maxSteps, queries, 0);
         // If no paths are found return empty struct
         if (queries.adapters.length == 0) {
             queries.amounts = "";
@@ -253,6 +256,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
+        address[] memory _trustedTokens,
         uint256 _maxSteps,
         Offer memory _queries,
         uint256 _tknOutPriceNwei
@@ -272,15 +276,22 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
             bestOption.addToTail(queryDirect.amountOut, queryDirect.adapter, queryDirect.tokenOut, gasEstimate);
             bestAmountOut = queryDirect.amountOut;
         }
+
         // Only check the rest if they would go beyond step limit (Need at least 2 more steps)
         if (_maxSteps > 1 && _queries.adapters.length / 32 <= _maxSteps - 2) {
+            address[] memory _allTrustedTokens = new address[](TRUSTED_TOKENS.length + _trustedTokens.length);
+
+            // Concatenate default and additional trusted tokens
+            for (uint i=0; i < TRUSTED_TOKENS.length; i++) { _allTrustedTokens[i] = TRUSTED_TOKENS[i]; }
+            for (uint i=0; i < _trustedTokens.length; i++) { _allTrustedTokens[TRUSTED_TOKENS.length + i] = _trustedTokens[i]; }
+
             // Check for paths that pass through trusted tokens
-            for (uint256 i = 0; i < TRUSTED_TOKENS.length; i++) {
-                if (_tokenIn == TRUSTED_TOKENS[i]) {
+            for (uint256 i = 0; i < _allTrustedTokens.length; i++) {
+                if (_tokenIn == _allTrustedTokens[i]) {
                     continue;
                 }
                 // Loop through all adapters to find the best one for swapping tokenIn for one of the trusted tokens
-                Query memory bestSwap = queryNoSplit(_amountIn, _tokenIn, TRUSTED_TOKENS[i]);
+                Query memory bestSwap = queryNoSplit(_amountIn, _tokenIn, _allTrustedTokens[i]);
                 if (bestSwap.amountOut == 0) {
                     continue;
                 }
@@ -292,8 +303,9 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                 newOffer.addToTail(bestSwap.amountOut, bestSwap.adapter, bestSwap.tokenOut, gasEstimate);
                 newOffer = _findBestPath(
                     bestSwap.amountOut,
-                    TRUSTED_TOKENS[i],
+                    _allTrustedTokens[i],
                     _tokenOut,
+                    _allTrustedTokens,
                     _maxSteps,
                     newOffer,
                     _tknOutPriceNwei
