@@ -18,6 +18,7 @@ require('./src/tasks/find-best-path-wrapped')
 require('./src/tasks/list-adapters')
 
 const ARBITRUM_RPC = getEnvValSafe('ARBITRUM_RPC')
+const ARBITRUM_SEPOLIA_RPC = getEnvValSafe('ARBITRUM_SEPOLIA_RPC',false)
 const ARBITRUM_PK_DEPLOYER = getEnvValSafe('ARBITRUM_PK_DEPLOYER')
 const ETHERSCAN_API_KEY = getEnvValSafe('ETHERSCAN_API_KEY')
 
@@ -39,7 +40,7 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs: 999,
+          runs: 10000,
           details: {
             yulDetails: {
               optimizerSteps: "u"
@@ -55,23 +56,29 @@ module.exports = {
     }
   },
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
-    customChains: [
-      {
-        network: "mantle",
-        chainId: 5000,
-        urls: {
-        apiURL: "https://explorer.mantle.xyz/api",
-        browserURL: "https://explorer.mantle.xyz"
-        }
+    apiKey: {
+      arbitrum: ETHERSCAN_API_KEY,
+      arbitrumSepolia: ETHERSCAN_API_KEY
+    },
+    customChains: [{
+      network: "arbitrumSepolia",
+      chainId: 421614,
+      urls: {
+        apiURL: "https://api-sepolia.arbiscan.io/api",
+        browserURL: "https://sepolia.arbiscan.io"
       }
-    ]
+    }]
   },
   defaultNetwork: 'hardhat',
   networks: {
     arbitrum: {
       chainId: 42161,
       url: ARBITRUM_RPC,
+      accounts: [ ARBITRUM_PK_DEPLOYER ],
+    },
+    arbitrumSepolia: {
+      chainId: 421614,
+      url: ARBITRUM_SEPOLIA_RPC,
       accounts: [ ARBITRUM_PK_DEPLOYER ],
     },
   },

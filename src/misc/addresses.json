@@ -415,7 +415,21 @@
             "quoter": "0xc7d4412aa74c655B2e6e71bB6790d24AC90E393C",
             "factory": "0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42"
         }
-    }, 
+    },
+    "arbitrumSepolia": {
+        "assets": {
+            "USDC": "0xb893E3334D4Bd6C5ba8277Fd559e99Ed683A9FC7",
+            "WETH": "0x980B62Da83eFf3D4576C647993b0c1D7faf17c73"
+        },
+        "camelot": {
+            "router": "0xCf4062Ee235BbeB4C7c0336ada689ed1c17547b6",
+            "factory": "0x18E621B64d7808c3C47bccbbD7485d23F257D26f",
+            "algebraFactory": "0xaA37Bea711D585478E1c04b04707cCb0f10D762a"
+        },
+        "other": {
+            "algebraQuoter": "0xe49ef2F48539EA7498605CC1B3a242042cb5FC83"
+        }
+    },
     "dogechain": {
         "assets": {
             "WWDOGE": "0xB7ddC6414bf4F5515b52D8BdD69973Ae205ff101",

@@ -2,6 +2,7 @@ const {
     avalanche: ava, 
     dogechain: dog, 
     arbitrum: arb,
+    arbitrumSepolia: arbsep,
     optimism: opt,
     mantle: mnt
 } = require('./addresses.json')
@@ -82,13 +83,13 @@ module.exports = {
             'FusionAdapter'
         ],
         hopTokens: [
-            mnt.assets.METH,
-            mnt.assets.WMNT,
-            mnt.assets.MUSD,
-            mnt.assets.USDC,
-            mnt.assets.USDT,
-            mnt.assets.WBTC,
-            mnt.assets.WETH,
+            // mnt.assets.METH,
+            // mnt.assets.WMNT,
+            // mnt.assets.MUSD,
+            // mnt.assets.USDC,
+            // mnt.assets.USDT,
+            // mnt.assets.WBTC,
+            // mnt.assets.WETH,
         ], 
         wnative: mnt.assets.WMNT
     },
@@ -108,6 +109,18 @@ module.exports = {
             arb.assets.DAI,
         ], 
         wnative: arb.assets.WETH
+    },
+    "arbitrumSepolia": {
+        adapterWhitelist: [
+            'CamelotAdapter',
+            'WETHAdapter',
+            'CamelotAlgebraAdapter',
+        ],
+        hopTokens: [
+            arbsep.assets.WETH,
+            arbsep.assets.USDC,
+        ],
+        wnative: arbsep.assets.WETH
     },
     "optimism": {
         adapterWhitelist: [

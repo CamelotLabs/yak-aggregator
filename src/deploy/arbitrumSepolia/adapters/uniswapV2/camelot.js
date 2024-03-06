@@ -1,9 +1,9 @@
 const { deployAdapter, addresses } = require('../../../utils')
-const { factory } = addresses.arbitrum.camelot
+const { factory } = addresses.arbitrumSepolia.camelot
 
-const networkName = 'arbitrum'
+const networkName = 'arbitrumSepolia'
 const contractName = 'CamelotAdapter'
-const tags = [ 'camelot', 'camelot_v2' ]
+const tags = [ 'camelot' ]
 const name = contractName
 const gasEstimate = 238_412
 const args = [ name, factory, gasEstimate ]
