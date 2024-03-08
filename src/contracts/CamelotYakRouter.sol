@@ -61,33 +61,29 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         IERC20(_wnative).safeApprove(_wnative, type(uint256).max);
     }
 
-    function setTrustedTokens(
-        address[] memory _trustedTokens
-    ) public override onlyMaintainer {
+    function setTrustedTokens(address[] memory _trustedTokens) override public onlyMaintainer {
         emit UpdatedTrustedTokens(_trustedTokens);
         TRUSTED_TOKENS = _trustedTokens;
     }
 
-    function setAdapters(
-        address[] memory _adapters
-    ) public override onlyMaintainer {
+    function setAdapters(address[] memory _adapters) override public onlyMaintainer {
         emit UpdatedAdapters(_adapters);
         ADAPTERS = _adapters;
     }
 
-    function setMinFee(uint256 _fee) external override onlyMaintainer {
+    function setMinFee(uint256 _fee) override external onlyMaintainer {
         emit UpdatedMinFee(MIN_FEE, _fee);
         MIN_FEE = _fee;
     }
 
-    function setFeeClaimer(address _claimer) public override onlyMaintainer {
+    function setFeeClaimer(address _claimer) override public onlyMaintainer {
         emit UpdatedFeeClaimer(FEE_CLAIMER, _claimer);
         FEE_CLAIMER = _claimer;
     }
 
     //  -- GENERAL --
 
-    function trustedTokensCount() external view override returns (uint256) {
+    function trustedTokensCount() override external view returns (uint256) {
         return TRUSTED_TOKENS.length;
     }
 
@@ -100,16 +96,13 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
 
     // -- HELPERS --
 
-    function _applyFee(
-        uint256 _amountIn,
-        uint256 _fee
-    ) internal view returns (uint256) {
+    function _applyFee(uint256 _amountIn, uint256 _fee) internal view returns (uint256) {
         require(_fee >= MIN_FEE, "YakRouter: Insufficient fee");
         return (_amountIn * (FEE_DENOMINATOR - _fee)) / FEE_DENOMINATOR;
     }
 
     function _wrap(uint256 _amount) internal {
-        IWETH(WNATIVE).deposit{value: _amount}();
+        IWETH(WNATIVE).deposit{ value: _amount }();
     }
 
     function _unwrap(uint256 _amount) internal {
@@ -141,15 +134,11 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         }
     }
 
-    function _transferFrom(
-        address token,
-        address _from,
-        address _to,
-        uint _amount
-    ) internal {
+    function _transferFrom(address token, address _from, address _to, uint _amount) internal {
         if (_from != address(this))
             IERC20(token).safeTransferFrom(_from, _to, _amount);
-        else IERC20(token).safeTransfer(_to, _amount);
+        else 
+            IERC20(token).safeTransfer(_to, _amount);
     }
 
     // -- QUERIES --
@@ -162,15 +151,11 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         address _tokenIn,
         address _tokenOut,
         uint8 _index
-    ) external view override returns (uint256) {
+    ) override external view returns (uint256) {
         IAdapter _adapter = IAdapter(ADAPTERS[_index]);
-        try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (
-            uint256 _amountOut
-        ) {
+        try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 _amountOut) {
             return _amountOut;
-        } catch {
-            return 0;
-        }
+        catch { return 0; }
     }
 
     /**
@@ -181,19 +166,15 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         address _tokenIn,
         address _tokenOut,
         uint8[] calldata _options
-    ) public view override returns (Query memory) {
+    ) override public view returns (Query memory) {
         Query memory bestQuery;
         for (uint8 i; i < _options.length; i++) {
             address _adapter = ADAPTERS[_options[i]];
-            try
-                IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut)
-            returns (uint256 amountOut) {
+            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut) {
                 if (i == 0 || amountOut > bestQuery.amountOut) {
                     bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
                 }
-            } catch {
-                continue;
-            }
+            catch { continue; }
         }
         return bestQuery;
     }
@@ -205,19 +186,15 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) public view override returns (Query memory) {
+    ) override public view returns (Query memory) {
         Query memory bestQuery;
         for (uint8 i; i < ADAPTERS.length; i++) {
             address _adapter = ADAPTERS[i];
-            try
-                IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut)
-            returns (uint256 amountOut) {
+            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut) {
                 if (i == 0 || amountOut > bestQuery.amountOut) {
                     bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
                 }
-            } catch {
-                continue;
-            }
+            catch { continue; }
         }
         return bestQuery;
     }
@@ -233,12 +210,10 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         address[] memory _trustedTokens,
         uint256 _maxSteps,
         uint256 _gasPrice
-    ) external view override returns (FormattedOffer memory) {
+    ) override external view returns (FormattedOffer memory) {
         require(_maxSteps > 0 && _maxSteps < 5, "YakRouter: Invalid max-steps");
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
-        uint256 gasPriceInExitTkn = _gasPrice > 0
-            ? getGasPriceInExitTkn(_gasPrice, _tokenOut)
-            : 0;
+        uint256 gasPriceInExitTkn = _gasPrice > 0 ? getGasPriceInExitTkn(_gasPrice, _tokenOut) : 0;
 
         uint256 ttLength = TRUSTED_TOKENS.length;
         // Concatenate default and additional trusted tokens
@@ -258,15 +233,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
             }
         }
 
-        queries = _findBestPath(
-            _amountIn,
-            _tokenIn,
-            _tokenOut,
-            _allTrustedTokens,
-            _maxSteps,
-            queries,
-            gasPriceInExitTkn
-        );
+        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _allTrustedTokens, _maxSteps, queries, gasPriceInExitTkn);
         if (queries.adapters.length == 0) {
             queries.amounts = "";
             queries.path = "";
@@ -275,24 +242,13 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     }
 
     // Find the market price between gas-asset(native) and token-out and express gas price in token-out
-    function getGasPriceInExitTkn(
-        uint256 _gasPrice,
-        address _tokenOut
-    ) internal view returns (uint256 price) {
+    function getGasPriceInExitTkn(uint256 _gasPrice, address _tokenOut) internal view returns (uint256 price) {
         // Avoid low-liquidity price appreciation (https://github.com/yieldyak/yak-aggregator/issues/20)
         address[] memory _trustedTokens;
-        FormattedOffer memory gasQuery = findBestPath(
-            1e18,
-            WNATIVE,
-            _tokenOut,
-            _trustedTokens,
-            2
-        );
+        FormattedOffer memory gasQuery = findBestPath(1e18, WNATIVE, _tokenOut, _trustedTokens, 2);
         if (gasQuery.path.length != 0) {
             // Leave result in nWei to preserve precision for assets with low decimal places
-            price =
-                (gasQuery.amounts[gasQuery.amounts.length - 1] * _gasPrice) /
-                1e9;
+            price = (gasQuery.amounts[gasQuery.amounts.length - 1] * _gasPrice) / 1e9;
         }
     }
 
@@ -305,7 +261,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         address _tokenOut,
         address[] memory _trustedTokens,
         uint256 _maxSteps
-    ) public view override returns (FormattedOffer memory) {
+    ) override public view returns (FormattedOffer memory) {
         require(_maxSteps > 0 && _maxSteps < 5, "YakRouter: Invalid max-steps");
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
 
@@ -327,15 +283,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
             }
         }
 
-        queries = _findBestPath(
-            _amountIn,
-            _tokenIn,
-            _tokenOut,
-            _allTrustedTokens,
-            _maxSteps,
-            queries,
-            0
-        );
+        queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _allTrustedTokens, _maxSteps, queries, 0);
         // If no paths are found return empty struct
         if (queries.adapters.length == 0) {
             queries.amounts = "";
@@ -365,12 +313,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
             if (withGas) {
                 gasEstimate = IAdapter(queryDirect.adapter).swapGasEstimate();
             }
-            bestOption.addToTail(
-                queryDirect.amountOut,
-                queryDirect.adapter,
-                queryDirect.tokenOut,
-                gasEstimate
-            );
+            bestOption.addToTail(queryDirect.amountOut, queryDirect.adapter, queryDirect.tokenOut, gasEstimate);
             bestAmountOut = queryDirect.amountOut;
         }
 
@@ -385,11 +328,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                     continue;
                 }
                 // Loop through all adapters to find the best one for swapping tokenIn for one of the trusted tokens
-                Query memory bestSwap = queryNoSplit(
-                    _amountIn,
-                    _tokenIn,
-                    _trustedTokens[i]
-                );
+                Query memory bestSwap = queryNoSplit(_amountIn, _tokenIn, _trustedTokens[i]);
                 if (bestSwap.amountOut == 0) {
                     unchecked {
                         i++;
@@ -401,12 +340,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                 if (withGas) {
                     gasEstimate = IAdapter(bestSwap.adapter).swapGasEstimate();
                 }
-                newOffer.addToTail(
-                    bestSwap.amountOut,
-                    bestSwap.adapter,
-                    bestSwap.tokenOut,
-                    gasEstimate
-                );
+                newOffer.addToTail(bestSwap.amountOut, bestSwap.adapter, bestSwap.tokenOut, gasEstimate);
                 newOffer = _findBestPath(
                     bestSwap.amountOut,
                     _trustedTokens[i],
@@ -422,8 +356,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                     newOffer.getAmountOut() > bestAmountOut
                 ) {
                     if (newOffer.gasEstimate > bestOption.gasEstimate) {
-                        uint256 gasCostDiff = (_tknOutPriceNwei *
-                            (newOffer.gasEstimate - bestOption.gasEstimate)) /
+                        uint256 gasCostDiff = (_tknOutPriceNwei * (newOffer.gasEstimate - bestOption.gasEstimate)) /
                             1e9;
                         if (
                             gasCostDiff >
@@ -459,12 +392,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         if (_fee > 0 || MIN_FEE > 0) {
             // Transfer fees to the claimer account and decrease initial amount
             amountIn = _applyFee(_trade.amountIn, _fee);
-            _transferFrom(
-                _trade.path[0],
-                _from,
-                FEE_CLAIMER,
-                _trade.amountIn - amountIn
-            );
+            _transferFrom(_trade.path[0], _from, FEE_CLAIMER, _trade.amountIn - amountIn);
         }
         _transferFrom(_trade.path[0], _from, _trade.adapters[0], amountIn);
 
@@ -473,9 +401,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         for (uint256 i = 0; i < _trade.adapters.length; i++) {
             // All adapters should transfer output token to the following target
             // All targets are the adapters, expect for the last swap where tokens are sent out
-            address targetAddress = i < _trade.adapters.length - 1
-                ? _trade.adapters[i + 1]
-                : _to;
+            address targetAddress = i < _trade.adapters.length - 1 ? _trade.adapters[i + 1] : _to;
             IAdapter(_trade.adapters[i]).swap(
                 amountIn,
                 0,
@@ -486,10 +412,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
             amountIn = IERC20(_trade.path[i + 1]).balanceOf(targetAddress);
         }
         uint256 amountOut = amountIn - balanceBefore;
-        require(
-            amountOut >= _trade.amountOut,
-            "YakRouter: Insufficient output amount"
-        );
+        require(amountOut >= _trade.amountOut, "YakRouter: Insufficient output amount");
         emit YakSwap(_trade.path[0], tokenOut, _trade.amountIn, amountOut);
         return amountOut;
     }
@@ -498,7 +421,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Trade calldata _trade,
         uint256 _fee,
         address _to
-    ) public override {
+    ) override public {
         _swapNoSplit(_trade, msg.sender, _fee, _to);
     }
 
@@ -506,11 +429,8 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Trade calldata _trade,
         uint256 _fee,
         address _to
-    ) external payable override {
-        require(
-            _trade.path[0] == WNATIVE,
-            "YakRouter: Path needs to begin with WETH"
-        );
+    ) override external payable {
+        require(_trade.path[0] == WNATIVE, "YakRouter: Path needs to begin with WETH");
         _wrap(_trade.amountIn);
         _swapNoSplit(_trade, address(this), _fee, _to);
     }
@@ -519,11 +439,9 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Trade calldata _trade,
         uint256 _fee,
         address _to
-    ) public override {
-        require(
-            _trade.path[_trade.path.length - 1] == WNATIVE,
-            "YakRouter: Path needs to end with WETH"
-        );
+    ) override public {
+        require(_trade.path[_trade.path.length - 1] == WNATIVE, "YakRouter: Path needs to end with WETH");
+        uint256 returnAmount = _swapNoSplit(_trade, msg.sender, _fee, address(this));
         uint256 returnAmount = _swapNoSplit(
             _trade,
             msg.sender,
@@ -544,16 +462,8 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) external override {
-        IERC20(_trade.path[0]).permit(
-            msg.sender,
-            address(this),
-            _trade.amountIn,
-            _deadline,
-            _v,
-            _r,
-            _s
-        );
+    ) override external {
+        IERC20(_trade.path[0]).permit(msg.sender, address(this), _trade.amountIn, _deadline, _v, _r, _s);
         swapNoSplit(_trade, _fee, _to);
     }
 
@@ -568,16 +478,8 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) external override {
-        IERC20(_trade.path[0]).permit(
-            msg.sender,
-            address(this),
-            _trade.amountIn,
-            _deadline,
-            _v,
-            _r,
-            _s
-        );
+    ) override external {
+        IERC20(_trade.path[0]).permit(msg.sender, address(this), _trade.amountIn, _deadline, _v, _r, _s);
         swapNoSplitToETH(_trade, _fee, _to);
     }
 }
