@@ -87,7 +87,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         return TRUSTED_TOKENS.length;
     }
 
-    function adaptersCount() external view override returns (uint256) {
+    function adaptersCount() override external view returns (uint256) {
         return ADAPTERS.length;
     }
 
@@ -137,7 +137,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     function _transferFrom(address token, address _from, address _to, uint _amount) internal {
         if (_from != address(this))
             IERC20(token).safeTransferFrom(_from, _to, _amount);
-        else 
+        else
             IERC20(token).safeTransfer(_to, _amount);
     }
 
@@ -155,6 +155,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         IAdapter _adapter = IAdapter(ADAPTERS[_index]);
         try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 _amountOut) {
             return _amountOut;
+        }
         catch { return 0; }
     }
 
@@ -174,6 +175,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                 if (i == 0 || amountOut > bestQuery.amountOut) {
                     bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
                 }
+            }
             catch { continue; }
         }
         return bestQuery;
@@ -194,6 +196,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                 if (i == 0 || amountOut > bestQuery.amountOut) {
                     bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
                 }
+            }
             catch { continue; }
         }
         return bestQuery;
@@ -442,12 +445,6 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     ) override public {
         require(_trade.path[_trade.path.length - 1] == WNATIVE, "YakRouter: Path needs to end with WETH");
         uint256 returnAmount = _swapNoSplit(_trade, msg.sender, _fee, address(this));
-        uint256 returnAmount = _swapNoSplit(
-            _trade,
-            msg.sender,
-            _fee,
-            address(this)
-        );
         _unwrapTo(_to, returnAmount);
     }
 
