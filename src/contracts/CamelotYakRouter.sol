@@ -29,7 +29,6 @@ import "./lib/YakViewUtils.sol";
 import "./lib/Recoverable.sol";
 import "./lib/SafeERC20.sol";
 
-
 contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     using SafeERC20 for IERC20;
     using OfferUtils for Offer;
@@ -141,7 +140,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         else
             IERC20(token).safeTransfer(_to, _amount);
     }
-    
+
     // -- QUERIES --
 
     /**
@@ -219,10 +218,23 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
         uint256 gasPriceInExitTkn = _gasPrice > 0 ? getGasPriceInExitTkn(_gasPrice, _tokenOut) : 0;
 
+        uint256 ttLength = TRUSTED_TOKENS.length;
         // Concatenate default and additional trusted tokens
-        address[] memory _allTrustedTokens = new address[](TRUSTED_TOKENS.length + _trustedTokens.length);
-        for (uint i=0; i < TRUSTED_TOKENS.length; i++) { _allTrustedTokens[i] = TRUSTED_TOKENS[i]; }
-        for (uint i=0; i < _trustedTokens.length; i++) { _allTrustedTokens[TRUSTED_TOKENS.length + i] = _trustedTokens[i]; }
+        address[] memory _allTrustedTokens = new address[](
+            ttLength + _trustedTokens.length
+        );
+        for (uint i = 0; i < ttLength; ) {
+            _allTrustedTokens[i] = TRUSTED_TOKENS[i];
+            unchecked {
+                i++;
+            }
+        }
+        for (uint i = 0; i < _trustedTokens.length; ) {
+            _allTrustedTokens[ttLength + i] = _trustedTokens[i];
+            unchecked {
+                i++;
+            }
+        }
 
         queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _allTrustedTokens, _maxSteps, queries, gasPriceInExitTkn);
         if (queries.adapters.length == 0) {
@@ -256,10 +268,23 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         require(_maxSteps > 0 && _maxSteps < 5, "YakRouter: Invalid max-steps");
         Offer memory queries = OfferUtils.newOffer(_amountIn, _tokenIn);
 
+        uint256 ttLength = TRUSTED_TOKENS.length;
         // Concatenate default and additional trusted tokens
-        address[] memory _allTrustedTokens = new address[](TRUSTED_TOKENS.length + _trustedTokens.length);
-        for (uint i=0; i < TRUSTED_TOKENS.length; i++) { _allTrustedTokens[i] = TRUSTED_TOKENS[i]; }
-        for (uint i=0; i < _trustedTokens.length; i++) { _allTrustedTokens[TRUSTED_TOKENS.length + i] = _trustedTokens[i]; }
+        address[] memory _allTrustedTokens = new address[](
+            ttLength + _trustedTokens.length
+        );
+        for (uint i = 0; i < ttLength; ) {
+            _allTrustedTokens[i] = TRUSTED_TOKENS[i];
+            unchecked {
+                i++;
+            }
+        }
+        for (uint i = 0; i < _trustedTokens.length; ) {
+            _allTrustedTokens[ttLength + i] = _trustedTokens[i];
+            unchecked {
+                i++;
+            }
+        }
 
         queries = _findBestPath(_amountIn, _tokenIn, _tokenOut, _allTrustedTokens, _maxSteps, queries, 0);
         // If no paths are found return empty struct
@@ -282,12 +307,12 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Offer memory bestOption = _queries.clone();
         uint256 bestAmountOut;
         uint256 gasEstimate;
-        bool withGas = _tknOutPriceNwei != 0;
+        bool withGas = _tknOutPriceNwei > 0;
 
         // First check if there is a path directly from tokenIn to tokenOut
         Query memory queryDirect = queryNoSplit(_amountIn, _tokenIn, _tokenOut);
 
-        if (queryDirect.amountOut != 0) {
+        if (queryDirect.amountOut > 0) {
             if (withGas) {
                 gasEstimate = IAdapter(queryDirect.adapter).swapGasEstimate();
             }
@@ -298,13 +323,19 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         // Only check the rest if they would go beyond step limit (Need at least 2 more steps)
         if (_maxSteps > 1 && _queries.adapters.length / 32 <= _maxSteps - 2) {
             // Check for paths that pass through trusted tokens
-            for (uint256 i = 0; i < _trustedTokens.length; i++) {
+            for (uint256 i = 0; i < _trustedTokens.length; ) {
                 if (_tokenIn == _trustedTokens[i]) {
+                    unchecked {
+                        i++;
+                    }
                     continue;
                 }
                 // Loop through all adapters to find the best one for swapping tokenIn for one of the trusted tokens
                 Query memory bestSwap = queryNoSplit(_amountIn, _tokenIn, _trustedTokens[i]);
                 if (bestSwap.amountOut == 0) {
+                    unchecked {
+                        i++;
+                    }
                     continue;
                 }
                 // Explore options that connect the current path to the tokenOut
@@ -322,20 +353,30 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                     newOffer,
                     _tknOutPriceNwei
                 ); // Recursive step
-                address tokenOut = newOffer.getTokenOut();
-                uint256 amountOut = newOffer.getAmountOut();
                 // Check that the last token in the path is the tokenOut and update the new best option if neccesary
-                if (_tokenOut == tokenOut && amountOut > bestAmountOut) {
+                if (
+                    _tokenOut == newOffer.getTokenOut() &&
+                    newOffer.getAmountOut() > bestAmountOut
+                ) {
                     if (newOffer.gasEstimate > bestOption.gasEstimate) {
                         uint256 gasCostDiff = (_tknOutPriceNwei * (newOffer.gasEstimate - bestOption.gasEstimate)) /
                             1e9;
-                        uint256 priceDiff = amountOut - bestAmountOut;
-                        if (gasCostDiff > priceDiff) {
+                        if (
+                            gasCostDiff >
+                            newOffer.getAmountOut() - bestAmountOut
+                        ) {
+                            unchecked {
+                                i++;
+                            }
                             continue;
                         }
                     }
-                    bestAmountOut = amountOut;
+                    bestAmountOut = newOffer.getAmountOut();
                     bestOption = newOffer;
+                }
+
+                unchecked {
+                    i++;
                 }
             }
         }
