@@ -430,6 +430,20 @@
             "algebraQuoter": "0xe49ef2F48539EA7498605CC1B3a242042cb5FC83"
         }
     },
+    "xai": {
+        "assets": {
+            "USDC": "0x300a7b57dc85b6a9776e249614abf0fe5c9905fb",
+            "WETH": "0x3fB787101DC6Be47cfe18aeEe15404dcC842e6AF"
+        },
+        "camelot": {
+            "router": "0x6a63830E24f9a2F9C295fB2150107D0390Ed1448",
+            "factory": "0x18E621B64d7808c3C47bccbbD7485d23F257D26f",
+            "algebraFactory": "0xD8676fBdfa5b56BB2298D452c9768f51e80e34AE"
+        },
+        "other": {
+            "algebraQuoter": "0x89aee07E1dbaFc82f089b45FfC763738e9FfF226"
+        }
+    },
     "dogechain": {
         "assets": {
             "WWDOGE": "0xB7ddC6414bf4F5515b52D8BdD69973Ae205ff101",

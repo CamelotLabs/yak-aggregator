@@ -3,6 +3,7 @@ const {
     dogechain: dog, 
     arbitrum: arb,
     arbitrumSepolia: arbsep,
+    xai: xai,
     optimism: opt,
     mantle: mnt
 } = require('./addresses.json')
@@ -121,6 +122,18 @@ module.exports = {
             arbsep.assets.USDC,
         ],
         wnative: arbsep.assets.WETH
+    },
+    "xai": {
+        adapterWhitelist: [
+            'CamelotAdapter',
+            'WETHAdapter',
+            'CamelotAlgebraAdapter',
+        ],
+        hopTokens: [
+            xai.assets.WETH,
+            xai.assets.USDC,
+        ],
+        wnative: xai.assets.WETH
     },
     "optimism": {
         adapterWhitelist: [
