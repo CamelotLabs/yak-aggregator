@@ -399,24 +399,25 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         }
         uint256 recipientBalanceBefore = IERC20(_trade.path[0]).balanceOf(_trade.recipients[0]);
         _transferFrom(_trade.path[0], _from, _trade.recipients[0], amountIn);
-        uint256 adjustedAmountIn = IERC20(_trade.path[0]).balanceOf(_trade.recipients[0]) - recipientBalanceBefore;
+        amountIn = IERC20(_trade.path[0]).balanceOf(_trade.recipients[0]) - recipientBalanceBefore;
 
         address tokenOut = _trade.path[_trade.path.length - 1];
-        uint256 balanceBefore = IERC20(tokenOut).balanceOf(_to);
         for (uint256 i = 0; i < _trade.adapters.length; i++) {
             // All adapters should transfer output token to the following target
             // All targets are the adapters, expect for the last swap where tokens are sent out
             address targetAddress = i < _trade.adapters.length - 1 ? _trade.recipients[i + 1] : _to;
+
+            recipientBalanceBefore =  IERC20(_trade.path[i + 1]).balanceOf(targetAddress);
             IAdapter(_trade.adapters[i]).swap(
-                adjustedAmountIn,
+                amountIn,
                 0,
                 _trade.path[i],
                 _trade.path[i + 1],
                 targetAddress
             );
-            adjustedAmountIn = IERC20(_trade.path[i + 1]).balanceOf(targetAddress);
+            amountIn = IERC20(_trade.path[i + 1]).balanceOf(targetAddress) - recipientBalanceBefore;
         }
-        uint256 amountOut = adjustedAmountIn - balanceBefore;
+        uint256 amountOut = amountIn;
         require(amountOut >= _trade.amountOut, "YakRouter: Insufficient output amount");
         emit YakSwap(_trade.path[0], tokenOut, _trade.amountIn, amountOut);
         return amountOut;
