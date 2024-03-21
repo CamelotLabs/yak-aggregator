@@ -18,5 +18,5 @@ interface IAdapter {
         uint256,
         address,
         address
-    ) external view returns (uint256);
+    ) external view returns (uint256, address);
 }

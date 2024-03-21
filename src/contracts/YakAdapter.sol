@@ -69,7 +69,7 @@ abstract contract YakAdapter is Maintainable {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) external view returns (uint256) {
+    ) external view returns (uint256, address) {
         return _query(_amountIn, _tokenIn, _tokenOut);
     }
 
@@ -107,7 +107,7 @@ abstract contract YakAdapter is Maintainable {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) internal view virtual returns (uint256);
+    ) internal view virtual returns (uint256, address);
 
     receive() external payable {}
 }

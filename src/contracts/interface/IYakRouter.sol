@@ -21,6 +21,7 @@ pragma solidity ^0.8.0;
 
 struct Query {
     address adapter;
+    address recipient;
     address tokenIn;
     address tokenOut;
     uint256 amountOut;
@@ -29,12 +30,14 @@ struct Offer {
     bytes amounts;
     bytes adapters;
     bytes path;
+    bytes recipients;
     uint256 gasEstimate;
 }
 struct FormattedOffer {
     uint256[] amounts;
     address[] adapters;
     address[] path;
+    address[] recipients;
     uint256 gasEstimate;
 }
 struct Trade {
@@ -42,6 +45,7 @@ struct Trade {
     uint256 amountOut;
     address[] path;
     address[] adapters;
+    address[] recipients;
 }
 
 interface IYakRouter {
@@ -69,7 +73,7 @@ interface IYakRouter {
         address _tokenIn,
         address _tokenOut,
         uint8 _index
-    ) external returns (uint256);
+    ) external returns (uint256, address);
 
     function queryNoSplit(
         uint256 _amountIn,

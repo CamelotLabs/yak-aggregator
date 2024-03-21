@@ -102,9 +102,10 @@ abstract contract UniswapV3likeAdapter is YakAdapter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) internal view override returns (uint256 quote) {
+    ) internal view override returns (uint256 quote, address recipient) {
         QParams memory params = getQParams(_amountIn, _tokenIn, _tokenOut);
         quote = getQuoteForBestPool(params);
+        recipient = address(this);
     }
 
     function _swap(

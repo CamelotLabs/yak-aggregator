@@ -69,9 +69,9 @@ contract CamelotAdapter is YakAdapter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) internal view override returns (uint256 amountOut) {
+    ) internal view override returns (uint256 amountOut, address pair) {
         if (_tokenIn != _tokenOut && _amountIn != 0)
-            (amountOut, ) = getQuoteAndPair(_amountIn, _tokenIn, _tokenOut);
+            (amountOut, pair) = getQuoteAndPair(_amountIn, _tokenIn, _tokenOut);
     }
 
     function _swap(
@@ -86,7 +86,6 @@ contract CamelotAdapter is YakAdapter {
         (uint256 amount0Out, uint256 amount1Out) = (_tokenIn < _tokenOut)
             ? (uint256(0), amountOut)
             : (amountOut, uint256(0));
-        IERC20(_tokenIn).safeTransfer(pair, _amountIn);
         IPair(pair).swap(amount0Out, amount1Out, to, new bytes(0), referrer);
     }
 }

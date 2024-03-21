@@ -24,6 +24,17 @@ interface IAlgebraFactory {
     function poolByPair(address, address) external view returns (address);
 }
 
+interface IAlgebraPool {
+    function swapSupportingFeeOnInputTokens(
+        address sender,
+        address recipient,
+        bool zeroForOne,
+        int256 amountSpecified,
+        uint160 sqrtPriceLimitX96,
+        bytes calldata data
+    ) external returns (int256 amount0, int256 amount1);
+}
+
 contract AlgebraAdapter is UniswapV3likeAdapter {
     using SafeERC20 for IERC20;
 
@@ -56,5 +67,25 @@ contract AlgebraAdapter is UniswapV3likeAdapter {
         } else {
             IERC20(IUniV3Pool(msg.sender).token1()).transfer(msg.sender, uint256(amount1Delta));
         }
+    }
+
+    function _underlyingSwap(
+        QParams memory params,
+        bytes memory callbackData
+    ) internal virtual override returns (uint256) {
+        address pool = getBestPool(params.tokenIn, params.tokenOut);
+        (bool zeroForOne, uint160 priceLimit) = getZeroOneAndSqrtPriceLimitX96(
+            params.tokenIn,
+            params.tokenOut
+        );
+        (int256 amount0, int256 amount1) = IAlgebraPool(pool).swapSupportingFeeOnInputTokens(
+            address(this),
+            address(this),
+            zeroForOne,
+            int256(params.amountIn),
+            priceLimit,
+            callbackData
+        );
+        return zeroForOne ? uint256(-amount1) : uint256(-amount0);
     }
 }

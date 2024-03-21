@@ -36,9 +36,10 @@ contract WNativeAdapter is YakAdapter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) internal view override returns (uint256 amountOut) {
+    ) internal view override returns (uint256 amountOut, address recipient) {
         if (_tokenIn == WNATIVE && _tokenOut == WNATIVE)
             amountOut = _amountIn;
+            recipient = address(this);
     }
 
     function _swap(

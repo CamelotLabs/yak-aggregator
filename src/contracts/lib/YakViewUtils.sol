@@ -22,7 +22,7 @@ library OfferUtils {
      * Makes a deep copy of Offer struct
      */
     function clone(Offer memory _queries) internal pure returns (Offer memory) {
-        return Offer(_queries.amounts, _queries.adapters, _queries.path, _queries.gasEstimate);
+        return Offer(_queries.amounts, _queries.adapters, _queries.path, _queries.recipients, _queries.gasEstimate);
     }
 
     /**
@@ -32,12 +32,14 @@ library OfferUtils {
         Offer memory _queries,
         uint256 _amount,
         address _adapter,
+        address _recipient,
         address _tokenOut,
         uint256 _gasEstimate
     ) internal pure {
         _queries.path = bytes.concat(_queries.path, _tokenOut.toBytes());
         _queries.adapters = bytes.concat(_queries.adapters, _adapter.toBytes());
         _queries.amounts = bytes.concat(_queries.amounts, _amount.toBytes());
+        _queries.recipients = bytes.concat(_queries.recipients, _recipient.toBytes());
         _queries.gasEstimate += _gasEstimate;
     }
 
@@ -50,6 +52,7 @@ library OfferUtils {
                 _queries.amounts.toUints(),
                 _queries.adapters.toAddresses(),
                 _queries.path.toAddresses(),
+                _queries.recipients.toAddresses(),
                 _queries.gasEstimate
             );
     }
@@ -81,11 +84,13 @@ library FormattedOfferUtils {
         uint256 amountOut, 
         address wrapper,
         address tokenOut,
+        address recipient,
         uint256 gasEstimate
     ) internal pure {
         offer.amounts = bytes.concat(abi.encodePacked(offer.amounts), amountOut.toBytes()).toUints();
         offer.adapters = bytes.concat(abi.encodePacked(offer.adapters), wrapper.toBytes()).toAddresses();
         offer.path = bytes.concat(abi.encodePacked(offer.path), tokenOut.toBytes()).toAddresses();
+        offer.recipients = bytes.concat(abi.encodePacked(offer.recipients), recipient.toBytes()).toAddresses();
         offer.gasEstimate += gasEstimate;
     }
 
@@ -97,11 +102,13 @@ library FormattedOfferUtils {
         uint256 amountOut, 
         address wrapper,
         address tokenOut,
+        address recipient,
         uint256 gasEstimate
     ) internal pure {
         offer.amounts = bytes.concat(amountOut.toBytes(), abi.encodePacked(offer.amounts)).toUints();
         offer.adapters = bytes.concat(wrapper.toBytes(), abi.encodePacked(offer.adapters)).toAddresses();
         offer.path = bytes.concat(tokenOut.toBytes(), abi.encodePacked(offer.path)).toAddresses();
+        offer.path = bytes.concat(recipient.toBytes(), abi.encodePacked(offer.recipients)).toAddresses();
         offer.gasEstimate += gasEstimate;
     }
 

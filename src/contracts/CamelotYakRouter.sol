@@ -151,12 +151,12 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         address _tokenIn,
         address _tokenOut,
         uint8 _index
-    ) override external view returns (uint256) {
+    ) override external view returns (uint256, address) {
         IAdapter _adapter = IAdapter(ADAPTERS[_index]);
-        try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 _amountOut) {
-            return _amountOut;
+        try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 _amountOut, address _recipient) {
+            return (_amountOut, _recipient);
         }
-        catch { return 0; }
+        catch { return (0, address(0)); }
     }
 
     /**
@@ -171,9 +171,9 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Query memory bestQuery;
         for (uint8 i; i < _options.length; i++) {
             address _adapter = ADAPTERS[_options[i]];
-            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut) {
+            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut, address _recipient) {
                 if (i == 0 || amountOut > bestQuery.amountOut) {
-                    bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
+                    bestQuery = Query(_adapter, _recipient, _tokenIn, _tokenOut, amountOut);
                 }
             }
             catch { continue; }
@@ -192,9 +192,9 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         Query memory bestQuery;
         for (uint8 i; i < ADAPTERS.length; i++) {
             address _adapter = ADAPTERS[i];
-            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut) {
+            try IAdapter(_adapter).query(_amountIn, _tokenIn, _tokenOut) returns (uint256 amountOut, address _recipient) {
                 if (i == 0 || amountOut > bestQuery.amountOut) {
-                    bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
+                    bestQuery = Query(_adapter, _recipient, _tokenIn, _tokenOut, amountOut);
                 }
             }
             catch { continue; }
@@ -316,7 +316,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
             if (withGas) {
                 gasEstimate = IAdapter(queryDirect.adapter).swapGasEstimate();
             }
-            bestOption.addToTail(queryDirect.amountOut, queryDirect.adapter, queryDirect.tokenOut, gasEstimate);
+            bestOption.addToTail(queryDirect.amountOut, queryDirect.adapter, queryDirect.recipient, queryDirect.tokenOut, gasEstimate);
             bestAmountOut = queryDirect.amountOut;
         }
 
@@ -343,7 +343,7 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
                 if (withGas) {
                     gasEstimate = IAdapter(bestSwap.adapter).swapGasEstimate();
                 }
-                newOffer.addToTail(bestSwap.amountOut, bestSwap.adapter, bestSwap.tokenOut, gasEstimate);
+                newOffer.addToTail(bestSwap.amountOut, bestSwap.adapter, bestSwap.recipient, bestSwap.tokenOut, gasEstimate);
                 newOffer = _findBestPath(
                     bestSwap.amountOut,
                     _trustedTokens[i],
@@ -397,24 +397,26 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
             amountIn = _applyFee(_trade.amountIn, _fee);
             _transferFrom(_trade.path[0], _from, FEE_CLAIMER, _trade.amountIn - amountIn);
         }
-        _transferFrom(_trade.path[0], _from, _trade.adapters[0], amountIn);
+        uint256 recipientBalanceBefore = IERC20(_trade.path[0]).balanceOf(_trade.recipients[0]);
+        _transferFrom(_trade.path[0], _from, _trade.recipients[0], amountIn);
+        uint256 adjustedAmountIn = IERC20(_trade.path[0]).balanceOf(_trade.recipients[0]) - recipientBalanceBefore;
 
         address tokenOut = _trade.path[_trade.path.length - 1];
         uint256 balanceBefore = IERC20(tokenOut).balanceOf(_to);
         for (uint256 i = 0; i < _trade.adapters.length; i++) {
             // All adapters should transfer output token to the following target
             // All targets are the adapters, expect for the last swap where tokens are sent out
-            address targetAddress = i < _trade.adapters.length - 1 ? _trade.adapters[i + 1] : _to;
+            address targetAddress = i < _trade.adapters.length - 1 ? _trade.recipients[i + 1] : _to;
             IAdapter(_trade.adapters[i]).swap(
-                amountIn,
+                adjustedAmountIn,
                 0,
                 _trade.path[i],
                 _trade.path[i + 1],
                 targetAddress
             );
-            amountIn = IERC20(_trade.path[i + 1]).balanceOf(targetAddress);
+            adjustedAmountIn = IERC20(_trade.path[i + 1]).balanceOf(targetAddress);
         }
-        uint256 amountOut = amountIn - balanceBefore;
+        uint256 amountOut = adjustedAmountIn - balanceBefore;
         require(amountOut >= _trade.amountOut, "YakRouter: Insufficient output amount");
         emit YakSwap(_trade.path[0], tokenOut, _trade.amountIn, amountOut);
         return amountOut;
