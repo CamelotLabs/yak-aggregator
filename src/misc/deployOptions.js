@@ -41,9 +41,10 @@ module.exports = {
             'CamelotAlgebraAdapter',
         ],
         hopTokens: [
-            xai.assets.WETH,
+            xai.assets.WXAI,
             xai.assets.USDC,
+            xai.assets.WETH
         ],
-        wnative: xai.assets.WETH
+        wnative: xai.assets.WXAI
     }
 }
