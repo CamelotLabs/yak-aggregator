@@ -109,10 +109,6 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
         IWETH(WNATIVE).withdraw(_amount);
     }
 
-    function _unwrapTo(address _to, uint256 _amount) internal {
-        IWETH(WNATIVE).withdrawTo(_to, _amount);
-    }
-
     /**
      * @notice Return tokens to user
      * @dev Pass address(0) for ETH
@@ -448,7 +444,8 @@ contract CamelotYakRouter is Maintainable, Recoverable, IYakRouter {
     ) override public {
         require(_trade.path[_trade.path.length - 1] == WNATIVE, "YakRouter: Path needs to end with WETH");
         uint256 returnAmount = _swapNoSplit(_trade, msg.sender, _fee, address(this));
-        _unwrapTo(_to, returnAmount);
+        _unwrap(returnAmount);
+        _returnTokensTo(NATIVE, returnAmount, _to);
     }
 
     /**
