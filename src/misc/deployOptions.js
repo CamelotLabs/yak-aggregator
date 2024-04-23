@@ -1,6 +1,7 @@
 const {
     arbitrum: arb,
     arbitrumSepolia: arbsep,
+    sanko: sanko,
     xai: xai
 } = require('./addresses.json')
 
@@ -33,6 +34,18 @@ module.exports = {
             arbsep.assets.USDC,
         ],
         wnative: arbsep.assets.WETH
+    },
+    "sanko": {
+        adapterWhitelist: [
+            'CamelotAdapter',
+            'WETHAdapter',
+            'CamelotAlgebraAdapter',
+        ],
+        hopTokens: [
+            sanko.assets.WDMT,
+            sanko.assets.USDC
+        ],
+        wnative: sanko.assets.WDMT
     },
     "xai": {
         adapterWhitelist: [

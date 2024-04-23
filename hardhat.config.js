@@ -19,6 +19,7 @@ require('./src/tasks/list-adapters')
 
 const ARBITRUM_RPC = getEnvValSafe('ARBITRUM_RPC')
 const ARBITRUM_SEPOLIA_RPC = getEnvValSafe('ARBITRUM_SEPOLIA_RPC',false)
+const SANKO_RPC = getEnvValSafe('SANKO_RPC',false)
 const XAI_RPC = getEnvValSafe('XAI_RPC',false)
 const ARBITRUM_PK_DEPLOYER = getEnvValSafe('ARBITRUM_PK_DEPLOYER')
 const ETHERSCAN_API_KEY = getEnvValSafe('ETHERSCAN_API_KEY')
@@ -58,8 +59,9 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      arbitrum: ETHERSCAN_API_KEY,
+      arbitrumOne: ETHERSCAN_API_KEY,
       arbitrumSepolia: ETHERSCAN_API_KEY,
+      sanko: ETHERSCAN_API_KEY,
       xai: ETHERSCAN_API_KEY
     },
     customChains: [{
@@ -68,6 +70,13 @@ module.exports = {
       urls: {
         apiURL: "https://api-sepolia.arbiscan.io/api",
         browserURL: "https://sepolia.arbiscan.io"
+      }
+    },{
+      network: "sanko",
+      chainId: 1996,
+      urls: {
+        apiURL: "https://sanko-mainnet.calderaexplorer.xyz/api",
+        browserURL: "https://sanko-mainnet.calderaexplorer.xyz/"
       }
     },{
       network: "xai",
@@ -88,6 +97,11 @@ module.exports = {
     arbitrumSepolia: {
       chainId: 421614,
       url: ARBITRUM_SEPOLIA_RPC,
+      accounts: [ ARBITRUM_PK_DEPLOYER ],
+    },
+    sanko: {
+      chainId: 1996,
+      url: SANKO_RPC,
       accounts: [ ARBITRUM_PK_DEPLOYER ],
     },
     xai: {

@@ -35,6 +35,20 @@
             "algebraQuoter": "0xe49ef2F48539EA7498605CC1B3a242042cb5FC83"
         }
     },
+    "sanko": {
+        "assets": {
+            "USDC": "0x13D675BC5e659b11CFA331594cF35A20815dCF02",
+            "WDMT": "0x754cDAd6f5821077d6915004Be2cE05f93d176f8"
+        },
+        "camelot": {
+            "router": "0x18E621B64d7808c3C47bccbbD7485d23F257D26f",
+            "factory": "0x7d8c6B58BA2d40FC6E34C25f9A488067Fe0D2dB4",
+            "algebraFactory": "0xcF8d0723e69c6215523253a190eB9Bc3f68E0FFa"
+        },
+        "other": {
+            "algebraQuoter": "0x36049d5B4aAef6c39Cd4a5bD1A2E1224F07621a2"
+        }
+    },
     "xai": {
         "assets": {
             "USDC": "0x300a7b57dc85b6a9776e249614abf0fe5c9905fb",
